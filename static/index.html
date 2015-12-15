@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>React Tutorial</title>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/react/0.14.3/react-dom.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.23/browser.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+    <style>
+      body {
+        padding-top: 20px;
+        padding-bottom: 20px;
+      }
+      @media (min-width: 768px) {
+        .container {
+          max-width: 730px;
+        }
+      }
+      .container-narrow > hr {
+        margin: 30px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header clearfix">
+        <h3 class="text-muted">Todo App</h3>
+      </div>
+      <div id="content"></div>
+    </div>
+    <script type="text/babel">
+var Todo = React.createClass({
+  _onSwitchDone: function() {
+    this.props._onSwitchDone(this.props.todo.id)
+  },
+  _onDeleteTodo: function() {
+    this.props._onDeleteTodo(this.props.todo.id)
+  },
+  render: function() {
+    var todo = this.props.todo;
+    var style = {
+      textDecoration: todo.done ? "line-through" : "none",
+      color: todo.done ? "#AAA" : "#333",
+    };
+    return (
+      <tr>
+        <td>
+          <input type="checkbox" checked={todo.done} onChange={this._onSwitchDone} />
+        </td>
+        <td>
+          <span style={style}>{todo.text}</span>
+        </td>
+        <td>
+          <a href="javascript:void(0)" onClick={this._onDeleteTodo}>
+            <span className="glyphicon glyphicon-remove text-danger"></span>
+          </a>
+        </td>
+      </tr>
+    );
+  },
+});
+var TodoList = React.createClass({
+  _onSwitchDone: function(id) {
+    this.props.onSwitchDone(id)
+  },
+  _onDeleteTodo: function(id) {
+    this.props.onDeleteTodo(id)
+  },
+  render: function() {
+    var p = this;
+    var todos = this.props.todos.map(function(todo) {
+      return (
+        <Todo key={todo.id} todo={todo} _onSwitchDone={p._onSwitchDone} _onDeleteTodo={p._onDeleteTodo} />
+      );
+    });
+    return (
+      <tbody>
+        {todos}
+      </tbody>
+    );
+  },
+});
+var TodoInputForm = React.createClass({
+  _onCreate: function(e) {
+    if (e.keyCode == 13) {
+      this.props.onCreateTodo(e.target.value);
+      e.target.value = "";
+    }
+  },
+  render: function() {
+    return (
+      <div>
+        <input type="text" onKeyUp={this._onCreate} />
+      </div>
+    );
+  },
+});
+var TodoDeleteButton = React.createClass({
+  _onDeleteDone: function() {
+    this.props.onDeleteDone();
+  },
+  render: function() {
+    return (
+      <div>
+        <button onClick={this._onDeleteDone}>delete</button>
+      </div>
+    );
+  },
+});
+var TodoBox = React.createClass({
+  getInitialState: function() {
+    return { todos: [] };
+  },
+  componentWillMount: function() {
+    this.refresh();
+  },
+  refresh: function() {
+    console.log("refresh");
+
+    var p = this;
+    $.ajax({
+      url:  "/api/list",
+      type: 'GET',
+    }).done(function(data) {
+      if (data.success) {
+	p.setState({ todos: data.result });
+      } else {
+        alert(data);
+      }
+    });
+  },
+  onCreateTodo: function(text) {
+    console.log("onCreateTodo:" + text);
+
+    var p = this;
+    var res = $.ajax({
+      url:   "/api/create",
+      type:  'POST',
+      data:  { text: text },
+      async: false,
+    }).done(function(data) {
+      p.refresh();
+    });
+  },
+  onSwitchDone: function(id) {
+    console.log("onSwitchDone:"+id);
+
+    var p = this;
+    $.ajax({
+      url:  "/api/switch",
+      type: 'POST',
+      data: { id: id },
+    }).done(function(data) {
+      p.refresh();
+    });
+  },
+  onDeleteTodo: function(id) {
+    console.log("onDeleteTodo:"+id);
+
+    var p = this;
+    $.ajax({
+      url:  "/api/delete",
+      type: 'POST',
+      data: { id: id },
+    }).done(function(data) {
+      p.refresh();
+    });
+  },
+  onDeleteDoneAll: function() {
+    var ids = this.state.todos.filter(function(todo) {
+      return todo.done == true;
+    }).map(function(todo) {
+      return todo.id;
+    });
+    console.log("onDeleteDone:"+ids);
+
+    var p = this;
+    $.ajax({
+      url:         "/api/delete",
+      type:        'POST',
+      data:        { id: ids },
+      traditional: true,
+    }).done(function(data) {
+      p.refresh();
+    });
+  },
+  render: function() {
+    return (
+      <div>
+        <TodoInputForm onCreateTodo={this.onCreateTodo} />
+        <table className="table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" /></th>
+              <th width="100%">text</th>
+              <th>del</th>
+            </tr>
+          </thead>
+          <TodoList todos={this.state.todos} onSwitchDone={this.onSwitchDone} onDeleteTodo={this.onDeleteTodo} />
+        </table>
+        <TodoDeleteButton onDeleteDone={this.onDeleteDoneAll}/>
+      </div>
+    );
+  },
+});
+ReactDOM.render(
+  <TodoBox />,
+  document.getElementById('content')
+);
+    </script>
+  </body>
+</html>
