@@ -11,6 +11,7 @@ type Options struct {
 	Host   string `envconfig:"HOST" default:"localhost"`
 	Port   int    `envconfig:"PORT" default:"5000"`
 	Static string `envconfig:"STATIC" default:"./static"`
+	Debug  bool   `envconfig:"DEBUG" default:"false"`
 }
 
 func Get() (Options, error) {

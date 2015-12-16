@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/mix3/go-todo-webapp/apps"
 	"github.com/mix3/go-todo-webapp/db"
 	"github.com/mix3/go-todo-webapp/options"
+	"github.com/mix3/ran"
 )
 
 func main() {
@@ -28,5 +28,5 @@ func main() {
 	log.Println("[main] starting...")
 	log.Println("[main] running on", addr, "...")
 
-	log.Fatal(http.ListenAndServe(addr, app))
+	ran.Run(addr, app)
 }

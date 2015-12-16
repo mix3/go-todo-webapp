@@ -39,7 +39,9 @@ func New(opts options.Options) (*DB, error) {
 		return nil, err
 	}
 
-	dbmap.TraceOn("[gorp]", log.New(os.Stdout, "todo:", log.Lmicroseconds))
+	if opts.Debug {
+		dbmap.TraceOn("[gorp]", log.New(os.Stdout, "todo:", log.Lmicroseconds))
+	}
 
 	return &DB{dbmap: dbmap}, nil
 }
