@@ -20,7 +20,7 @@ func (cf *CreateForm) FieldMap(req *http.Request) binding.FieldMap {
 }
 
 type SwitchForm struct {
-	Id int
+	Id []int
 }
 
 func (sf *SwitchForm) FieldMap(req *http.Request) binding.FieldMap {

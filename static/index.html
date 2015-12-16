@@ -111,7 +111,7 @@ var TodoDeleteButton = React.createClass({
 });
 var TodoBox = React.createClass({
   getInitialState: function() {
-    return { todos: [] };
+    return { toggle: false, todos: [] };
   },
   componentWillMount: function() {
     this.refresh();
@@ -126,9 +126,18 @@ var TodoBox = React.createClass({
     }).done(function(data) {
       if (data.success) {
 	p.setState({ todos: data.result });
+        p.refreshToggle();
       } else {
         alert(data);
       }
+    });
+  },
+  refreshToggle: function() {
+    var undone = this.state.todos.filter(function(todo) {
+      return !todo.done;
+    });
+    this.setState({
+      toggle: (!(0 < undone.length) && (0 < this.state.todos.length)),
     });
   },
   onCreateTodo: function(text) {
@@ -186,14 +195,32 @@ var TodoBox = React.createClass({
       p.refresh();
     });
   },
+  onToggleDone: function() {
+    var p = this;
+
+    var ids = this.state.todos.filter(function(todo) {
+      return todo.done == p.state.toggle;
+    }).map(function(todo) {
+      return todo.id;
+    });
+
+    $.ajax({
+      url:         "/api/switch",
+      type:        'POST',
+      data:        { id: ids },
+      traditional: true,
+    }).done(function(data) {
+      p.refresh();
+    });
+  },
   render: function() {
     return (
       <div>
-        <TodoInputForm onCreateTodo={this.onCreateTodo} />
+	<TodoInputForm onCreateTodo={this.onCreateTodo} />
         <table className="table">
           <thead>
             <tr>
-              <th><input type="checkbox" /></th>
+	      <th><input type="checkbox" checked={this.state.toggle} onChange={this.onToggleDone}/></th>
               <th width="100%">text</th>
               <th>del</th>
             </tr>

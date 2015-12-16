@@ -32,14 +32,16 @@ func (db *DB) TodoCreate(text string) error {
 	return nil
 }
 
-func (db *DB) TodoSwitch(id int) error {
-	var update Todo
-	err := db.dbmap.SelectOne(&update, "SELECT * FROM todo WHERE id = ?", id)
-	if err != nil {
-		return err
+func (db *DB) TodoSwitch(ids []int) error {
+	q := "1 = 0"
+	if 0 < len(ids) {
+		q = "id IN (?" + strings.Repeat(", ?", len(ids)-1) + ")"
 	}
-	update.Done = !update.Done
-	_, err = db.dbmap.Update(&update)
+	var args []interface{}
+	for _, v := range ids {
+		args = append(args, v)
+	}
+	_, err := db.dbmap.Exec("UPDATE todo SET done = !done WHERE "+q, args...)
 	if err != nil {
 		return err
 	}
